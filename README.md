@@ -10,21 +10,21 @@
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```mermaid
 flowchart LR
-    A[🐍 Python\nData Generator\nsource/generate-data.py] -->|Raw CSVs| B
+    A[ Python\nData Generator\nsource/generate-data.py] -->|Raw CSVs| B
 
-    subgraph Docker["🐳 Docker Environment"]
+    subgraph Docker[" Docker Environment"]
         direction TB
-        B[📥 Bronze Layer\ndbt seed\nRaw Ingestion]
-        B -->|Deduplication\nNull Handling\nType Validation| C[🔧 Silver Layer\ndbt models\nData Quality]
-        C -->|Aggregation\nStar Schema Modelling| D[🥇 Gold Layer\ndbt models\nAnalytics-Ready]
+        B[ Bronze Layer\ndbt seed\nRaw Ingestion]
+        B -->|Deduplication\nNull Handling\nType Validation| C[ Silver Layer\ndbt models\nData Quality]
+        C -->|Aggregation\nStar Schema Modelling| D[ Gold Layer\ndbt models\nAnalytics-Ready]
     end
 
-    D -->|Loads into| E[(🐘 PostgreSQL\nData Warehouse)]
-    E -->|Direct Connection| F[📊 Power BI\nDashboard]
+    D -->|Loads into| E[( PostgreSQL\nData Warehouse)]
+    E -->|Direct Connection| F[ Power BI\nDashboard]
 
     style Docker fill:#1a1a2e,stroke:#2496ED,color:#fff
     style A fill:#306998,stroke:#FFD43B,color:#fff
@@ -37,7 +37,7 @@ flowchart LR
 
 ---
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
@@ -51,46 +51,46 @@ flowchart LR
 
 ---
 
-## 📐 Medallion Architecture
+##  Medallion Architecture
 
 This project follows a **Bronze → Silver → Gold** Medallion Architecture to ensure data quality at every stage of the pipeline.
 
 ```
-📦 Raw Data (CSV)
+ Raw Data (CSV)
     │
     ▼
-🥉 BRONZE  →  Raw ingestion via dbt seeds. No transformations. Data stored as-is.
+ BRONZE  →  Raw ingestion via dbt seeds. No transformations. Data stored as-is.
     │
     ▼
-🥈 SILVER  →  Data quality enforcement: deduplication, null-handling,
+ SILVER  →  Data quality enforcement: deduplication, null-handling,
               type-mismatch resolution using SQL window functions.
     │
     ▼
-🥇 GOLD    →  Analytics-ready Star Schema: dim_customer, dim_product, fct_order.
+ GOLD    →  Analytics-ready Star Schema: dim_customer, dim_product, fct_order.
               Optimized for Power BI reporting.
 ```
 
 ---
 
-## 📊 Dashboard Preview
+##  Dashboard Preview
 
 ![Dashboard Screenshot](E-Comm%20Dashboard/Screenshot%202026-06-17%20085853.png)
 
 The Power BI dashboard surfaces:
-- 📈 **Revenue Trends** over time
-- 🛍️ **Product Category Performance**
-- 🌍 **Country-Level Sales Distribution**
-- 📦 **Order Volume & Customer Metrics**
+-  **Revenue Trends** over time
+-  **Product Category Performance**
+-  **Country-Level Sales Distribution**
+-  **Order Volume & Customer Metrics**
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 E-Comm/
-├── 🐍 source/
+├──  source/
 │   └── generate-data.py          # Python script to generate raw e-commerce data
-├── 📦 dbt_project/
+├──  dbt_project/
 │   └── dbt_ecomm/
 │       ├── seeds/                 # Bronze: Raw CSV ingestion
 │       │   └── ecommerce_sales.csv
@@ -101,17 +101,17 @@ E-Comm/
 │               ├── dim_customer.sql
 │               ├── dim_product.sql
 │               └── fct_order.sql
-├── 📊 E-Comm Dashboard/
+├──  E-Comm Dashboard/
 │   ├── E-Commerce Analytics Dashboard.pbix
 │   └── Screenshot 2026-06-17 085853.png
-├── 🐳 Dockerfile
-├── 🐳 docker-compose.yml
-└── 📖 README.md
+├──  Dockerfile
+├──  docker-compose.yml
+└──  README.md
 ```
 
 ---
 
-## 🛠️ Setup & Installation
+##  Setup & Installation
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
@@ -147,10 +147,10 @@ E-Comm/
 
 ---
 
-## 💡 Key Highlights
+##  Key Highlights
 
-- 🔁 **Real-World Pipeline Simulation:** Injected intentional defects (nulls, duplicates, type mismatches) into raw CSV data using Python, then resolved them in the Silver layer — mirroring real production data quality challenges.
-- 🏗️ **Medallion Architecture:** Cleanly separated Bronze, Silver, and Gold layers for transparency, reusability, and testability.
-- ⭐ **Star Schema Design:** Modelled Gold layer data into a Star Schema (Fact + Dimension tables) for optimized analytical query performance.
-- 🐳 **Fully Containerized:** The entire data environment runs in Docker, making it 100% reproducible on any machine.
-- 📊 **Business-Ready Dashboard:** Power BI dashboard directly connected to PostgreSQL, reducing stakeholder reporting time from hours to minutes.
+-  **Real-World Pipeline Simulation:** Injected intentional defects (nulls, duplicates, type mismatches) into raw CSV data using Python, then resolved them in the Silver layer — mirroring real production data quality challenges.
+-  **Medallion Architecture:** Cleanly separated Bronze, Silver, and Gold layers for transparency, reusability, and testability.
+-  **Star Schema Design:** Modelled Gold layer data into a Star Schema (Fact + Dimension tables) for optimized analytical query performance.
+-  **Fully Containerized:** The entire data environment runs in Docker, making it 100% reproducible on any machine.
+-  **Business-Ready Dashboard:** Power BI dashboard directly connected to PostgreSQL, reducing stakeholder reporting time from hours to minutes.
