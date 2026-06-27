@@ -1,26 +1,18 @@
 name: dbt CI Pipeline
 
-# ─────────────────────────────────────────────
-# WHEN does this workflow run?
-# ─────────────────────────────────────────────
 on:
   push:
     branches:
-      - main        # Runs every time you push to main branch
+      - main
   pull_request:
     branches:
-      - main        # Runs on every pull request to main
+      - main
 
-# ─────────────────────────────────────────────
-# WHAT does this workflow do?
-# ─────────────────────────────────────────────
 jobs:
   dbt-run:
     name: Run dbt Models on Neon
-    runs-on: ubuntu-latest    # GitHub spins up a fresh Ubuntu virtual machine
+    runs-on: ubuntu-latest
 
-    # Pass GitHub Secrets as environment variables to ALL steps
-    # dbt will read these using env_var() in profiles.yml
     env:
       NEON_HOST: ${{ secrets.NEON_HOST }}
       NEON_DBNAME: ${{ secrets.NEON_DBNAME }}
@@ -29,45 +21,58 @@ jobs:
 
     steps:
 
-      # Step 1: Download your code onto the virtual machine
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install Python (dbt needs it)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Step 3: Install dbt with the PostgreSQL adapter
       - name: Install dbt-postgres
         run: pip install dbt-postgres==1.9.0
 
-      # Step 4: Create profiles.yml using dbt's env_var() approach
-      # This is the SAFE way — no shell escaping issues with special characters
+      # Use Python to write profiles.yml — handles ALL special characters safely
       - name: Create dbt profiles.yml
         run: |
           mkdir -p ~/.dbt
-          cat > ~/.dbt/profiles.yml << 'ENDOFFILE'
-          dbt_ecomm:
+          python3 - << 'PYEOF'
+          import os
+
+          host     = os.environ["NEON_HOST"]
+          dbname   = os.environ["NEON_DBNAME"]
+          user     = os.environ["NEON_USER"]
+          password = os.environ["NEON_PASSWORD"]
+
+          profile = f"""dbt_ecomm:
             outputs:
               prod:
                 type: postgres
-                host: "{{ env_var('NEON_HOST') }}"
+                host: {host}
                 port: 5432
-                dbname: "{{ env_var('NEON_DBNAME') }}"
-                user: "{{ env_var('NEON_USER') }}"
-                pass: "{{ env_var('NEON_PASSWORD') }}"
+                dbname: {dbname}
+                user: {user}
+                pass: '{password}'
                 schema: prod_schema
                 threads: 4
                 sslmode: require
             target: prod
-          ENDOFFILE
+          """
 
-      # Step 5: Run dbt — builds all your models on Neon
+          path = os.path.expanduser("~/.dbt/profiles.yml")
+          with open(path, "w") as f:
+              f.write(profile)
+
+          print(f"profiles.yml written to {path}")
+          print(f"Host: {host}")
+          print(f"DB:   {dbname}")
+          print(f"User: {user}")
+          print(f"Pass: {'*' * len(password)} ({len(password)} chars)")
+          PYEOF
+
       - name: Run dbt models
         run: dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
 
-      # Step 6: Compile check — validates all SQL is valid
       - name: dbt compile check
         run: dbt compile --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
+
