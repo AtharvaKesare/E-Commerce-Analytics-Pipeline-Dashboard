@@ -19,6 +19,14 @@ jobs:
     name: Run dbt Models on Neon
     runs-on: ubuntu-latest    # GitHub spins up a fresh Ubuntu virtual machine
 
+    # Pass GitHub Secrets as environment variables to ALL steps
+    # dbt will read these using env_var() in profiles.yml
+    env:
+      NEON_HOST: ${{ secrets.NEON_HOST }}
+      NEON_DBNAME: ${{ secrets.NEON_DBNAME }}
+      NEON_USER: ${{ secrets.NEON_USER }}
+      NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+
     steps:
 
       # Step 1: Download your code onto the virtual machine
@@ -35,34 +43,31 @@ jobs:
       - name: Install dbt-postgres
         run: pip install dbt-postgres==1.9.0
 
-      # Step 4: Create the profiles.yml file on the fly
-      # (We can't push profiles.yml to GitHub because it has secrets)
-      # So we BUILD it dynamically using the GitHub Secrets you'll add in Step 5
+      # Step 4: Create profiles.yml using dbt's env_var() approach
+      # This is the SAFE way — no shell escaping issues with special characters
       - name: Create dbt profiles.yml
         run: |
           mkdir -p ~/.dbt
-          cat > ~/.dbt/profiles.yml << EOF
+          cat > ~/.dbt/profiles.yml << 'ENDOFFILE'
           dbt_ecomm:
             outputs:
               prod:
                 type: postgres
-                host: ${{ secrets.NEON_HOST }}
+                host: "{{ env_var('NEON_HOST') }}"
                 port: 5432
-                dbname: ${{ secrets.NEON_DBNAME }}
-                user: ${{ secrets.NEON_USER }}
-                pass: ${{ secrets.NEON_PASSWORD }}
+                dbname: "{{ env_var('NEON_DBNAME') }}"
+                user: "{{ env_var('NEON_USER') }}"
+                pass: "{{ env_var('NEON_PASSWORD') }}"
                 schema: prod_schema
                 threads: 4
                 sslmode: require
             target: prod
-          EOF
+          ENDOFFILE
 
       # Step 5: Run dbt — builds all your models on Neon
       - name: Run dbt models
-        run: |
-          dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
+        run: dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
 
-      # Step 6: Run dbt source freshness & basic checks
+      # Step 6: Compile check — validates all SQL is valid
       - name: dbt compile check
-        run: |
-          dbt compile --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
+        run: dbt compile --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
