@@ -1,0 +1,30 @@
+# ============================================
+# dbt credentials — NEVER push to GitHub
+# ============================================
+dbt_project/.dbt/profiles.yml
+
+# ============================================
+# Environment variables / secrets
+# ============================================
+.env
+.env.*
+
+# ============================================
+# dbt build artifacts (generated files)
+# ============================================
+dbt_project/dbt_ecomm/target/
+dbt_project/dbt_ecomm/dbt_packages/
+dbt_project/logs/
+
+# ============================================
+# OS generated files
+# ============================================
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.pyc
+*.pyo
