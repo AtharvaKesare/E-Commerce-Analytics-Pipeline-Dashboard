@@ -12,18 +12,18 @@
 
 ---
 
-## 🏛️ Architecture
+##  Architecture
 
 ```mermaid
 flowchart LR
     A[ Python\nData Generator\nsource/generate-data.py] -->|Raw CSVs| B
 
-    subgraph GitHub["🤖 GitHub Actions (CI/CD)"]
+    subgraph GitHub[" GitHub Actions (CI/CD)"]
         direction TB
         TEST[Automated Testing\nSpins up test DB\nRuns dbt test]
     end
 
-    subgraph Docker["💻 Local Dev (Docker)"]
+    subgraph Docker[" Local Dev (Docker)"]
         direction TB
         B[ Bronze Layer\ndbt seed\nRaw Ingestion]
         B -->|Deduplication\nNull Handling| C[ Silver Layer\ndbt models\nData Quality]
@@ -48,7 +48,7 @@ flowchart LR
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
@@ -63,7 +63,7 @@ flowchart LR
 
 ---
 
-## 🥇 Medallion Architecture
+##  Medallion Architecture
 
 This project follows a **Bronze → Silver → Gold** Medallion Architecture to ensure data quality at every stage of the pipeline.
 
@@ -84,19 +84,19 @@ This project follows a **Bronze → Silver → Gold** Medallion Architecture to 
 
 ---
 
-## 📊 Dashboard Preview
+##  Dashboard Preview
 
 *(Add link to published Power BI web report here)*
 
 The Power BI dashboard surfaces:
-- 📈 **Revenue Trends** over time
-- 🛍️ **Product Category Performance**
-- 🌍 **Country-Level Sales Distribution**
-- 📦 **Order Volume & Customer Metrics**
+-  **Revenue Trends** over time
+-  **Product Category Performance**
+-  **Country-Level Sales Distribution**
+-  **Order Volume & Customer Metrics**
 
 ---
 
-## 🚀 CI/CD Pipeline (Automated Data Engineering)
+##  CI/CD Pipeline (Automated Data Engineering)
 
 To ensure high data quality and prevent bad code from breaking the production dashboard, a **CI/CD pipeline** was built using GitHub Actions.
 
@@ -108,11 +108,11 @@ Every time code is pushed to the repository:
 
 ---
 
-## 🌟 Key Highlights
+##  Key Highlights
 
-- ☁️ **Cloud-Native Production:** Transitioned from a local-only database to a Serverless Neon PostgreSQL database, enabling live dashboard access from anywhere.
-- 🤖 **Automated CI/CD:** Implemented a GitHub Actions workflow to automatically test SQL transformations on a fresh, containerized database upon every commit.
-- 🧹 **Real-World Data Cleaning:** Injected intentional defects (nulls, duplicates, type mismatches) into raw CSV data using Python, then resolved them in the Silver layer using window functions.
-- 🏗️ **Medallion Architecture:** Cleanly separated Bronze, Silver, and Gold layers for transparency, reusability, and testability.
-- 🌟 **Star Schema Design:** Modelled Gold layer data into a Star Schema (Fact + Dimension tables) for optimized analytical query performance.
-- 📊 **Live BI Integration:** Power BI dashboard directly connected to the Neon cloud database, pulling live updates dynamically.
+-  **Cloud-Native Production:** Transitioned from a local-only database to a Serverless Neon PostgreSQL database, enabling live dashboard access from anywhere.
+-  **Automated CI/CD:** Implemented a GitHub Actions workflow to automatically test SQL transformations on a fresh, containerized database upon every commit.
+-  **Real-World Data Cleaning:** Injected intentional defects (nulls, duplicates, type mismatches) into raw CSV data using Python, then resolved them in the Silver layer using window functions.
+-  **Medallion Architecture:** Cleanly separated Bronze, Silver, and Gold layers for transparency, reusability, and testability.
+-  **Star Schema Design:** Modelled Gold layer data into a Star Schema (Fact + Dimension tables) for optimized analytical query performance.
+-  **Live BI Integration:** Power BI dashboard directly connected to the Neon cloud database, pulling live updates dynamically.
