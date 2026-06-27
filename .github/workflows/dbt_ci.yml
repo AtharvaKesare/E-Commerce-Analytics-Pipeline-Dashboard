@@ -61,28 +61,13 @@ jobs:
           echo "Password length: ${#NEON_PASSWORD} chars"
           echo "Host being used: $NEON_HOST"
 
-      # DEBUG: Test raw PostgreSQL connection before running dbt
-      - name: Debug - Test Neon connection directly
+      # DEBUG: Test connection using psql (bypasses psycopg2 entirely)
+      - name: Debug - Test Neon connection with psql
         run: |
-          pip install psycopg2-binary -q
-          python3 -c "
-          import psycopg2, os
-          try:
-              conn = psycopg2.connect(
-                  host=os.environ['NEON_HOST'],
-                  port=5432,
-                  dbname=os.environ['NEON_DBNAME'],
-                  user=os.environ['NEON_USER'],
-                  password=os.environ['NEON_PASSWORD'],
-                  sslmode='require',
-                  connect_timeout=10
-              )
-              print('SUCCESS: Connected to Neon!')
-              conn.close()
-          except Exception as e:
-              print(f'FAILED: {e}')
-              exit(1)
-          "
+          sudo apt-get install -y postgresql-client -q
+          PGPASSWORD="$NEON_PASSWORD" psql \
+            "host=$NEON_HOST port=5432 dbname=$NEON_DBNAME user=$NEON_USER sslmode=require" \
+            -c "SELECT 1 as connection_test;"
 
       - name: Run dbt models
         run: dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
