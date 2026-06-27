@@ -30,7 +30,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dbt-postgres
-        run: pip install dbt-postgres==1.9.0
+        run: pip install dbt-core==1.11.6 dbt-postgres==1.10.0
 
       # Simplest possible approach — no heredoc, no f-strings, just echo
       - name: Create dbt profiles.yml
