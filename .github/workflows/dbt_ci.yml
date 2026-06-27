@@ -32,47 +32,60 @@ jobs:
       - name: Install dbt-postgres
         run: pip install dbt-postgres==1.9.0
 
-      # Use Python to write profiles.yml — handles ALL special characters safely
+      # Simplest possible approach — no heredoc, no f-strings, just echo
       - name: Create dbt profiles.yml
         run: |
           mkdir -p ~/.dbt
-          python3 - << 'PYEOF'
-          import os
+          {
+            echo "dbt_ecomm:"
+            echo "  outputs:"
+            echo "    prod:"
+            echo "      type: postgres"
+            echo "      host: $NEON_HOST"
+            echo "      port: 5432"
+            echo "      dbname: $NEON_DBNAME"
+            echo "      user: $NEON_USER"
+            echo "      pass: $NEON_PASSWORD"
+            echo "      schema: prod_schema"
+            echo "      threads: 4"
+            echo "      sslmode: require"
+            echo "  target: prod"
+          } > ~/.dbt/profiles.yml
 
-          host     = os.environ["NEON_HOST"]
-          dbname   = os.environ["NEON_DBNAME"]
-          user     = os.environ["NEON_USER"]
-          password = os.environ["NEON_PASSWORD"]
+      # DEBUG: Show exactly what's in profiles.yml (password masked)
+      - name: Debug - Show profiles.yml content
+        run: |
+          echo "=== profiles.yml content ==="
+          cat ~/.dbt/profiles.yml | sed "s/$NEON_PASSWORD/[MASKED]/g"
+          echo ""
+          echo "Password length: ${#NEON_PASSWORD} chars"
+          echo "Host being used: $NEON_HOST"
 
-          profile = f"""dbt_ecomm:
-            outputs:
-              prod:
-                type: postgres
-                host: {host}
-                port: 5432
-                dbname: {dbname}
-                user: {user}
-                pass: '{password}'
-                schema: prod_schema
-                threads: 4
-                sslmode: require
-            target: prod
-          """
-
-          path = os.path.expanduser("~/.dbt/profiles.yml")
-          with open(path, "w") as f:
-              f.write(profile)
-
-          print(f"profiles.yml written to {path}")
-          print(f"Host: {host}")
-          print(f"DB:   {dbname}")
-          print(f"User: {user}")
-          print(f"Pass: {'*' * len(password)} ({len(password)} chars)")
-          PYEOF
+      # DEBUG: Test raw PostgreSQL connection before running dbt
+      - name: Debug - Test Neon connection directly
+        run: |
+          pip install psycopg2-binary -q
+          python3 -c "
+          import psycopg2, os
+          try:
+              conn = psycopg2.connect(
+                  host=os.environ['NEON_HOST'],
+                  port=5432,
+                  dbname=os.environ['NEON_DBNAME'],
+                  user=os.environ['NEON_USER'],
+                  password=os.environ['NEON_PASSWORD'],
+                  sslmode='require',
+                  connect_timeout=10
+              )
+              print('SUCCESS: Connected to Neon!')
+              conn.close()
+          except Exception as e:
+              print(f'FAILED: {e}')
+              exit(1)
+          "
 
       - name: Run dbt models
         run: dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
 
       - name: dbt compile check
         run: dbt compile --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
-
