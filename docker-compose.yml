@@ -6,9 +6,9 @@ services:
    container_name: dbt_postgres 
    restart: always 
    environment: 
-     POSTGRES_USER: your_database_user
-     POSTGRES_PASSWORD: your_database_password
-     POSTGRES_DB: E-Commerce
+     POSTGRES_USER: ${POSTGRES_USER}
+     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+     POSTGRES_DB: ${POSTGRES_DB}
    ports: 
      - "5432:5432" 
    volumes: 
