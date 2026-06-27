@@ -10,14 +10,25 @@ on:
 
 jobs:
   dbt-run:
-    name: Run dbt Models on Neon
+    name: Run dbt Models
     runs-on: ubuntu-latest
 
-    env:
-      NEON_HOST: ${{ secrets.NEON_HOST }}
-      NEON_DBNAME: ${{ secrets.NEON_DBNAME }}
-      NEON_USER: ${{ secrets.NEON_USER }}
-      NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+    # GitHub spins up a fresh PostgreSQL container automatically!
+    # No Neon needed — no channel_binding issues, no external credentials
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: dbt_user
+          POSTGRES_PASSWORD: dbt_password
+          POSTGRES_DB: ecommerce
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
 
@@ -32,45 +43,31 @@ jobs:
       - name: Install dbt-postgres
         run: pip install dbt-core==1.11.6 dbt-postgres==1.10.0
 
-      # Simplest possible approach — no heredoc, no f-strings, just echo
+      # Create profiles.yml pointing to the GitHub Actions PostgreSQL
       - name: Create dbt profiles.yml
         run: |
           mkdir -p ~/.dbt
           {
             echo "dbt_ecomm:"
             echo "  outputs:"
-            echo "    prod:"
+            echo "    ci:"
             echo "      type: postgres"
-            echo "      host: $NEON_HOST"
+            echo "      host: localhost"
             echo "      port: 5432"
-            echo "      dbname: $NEON_DBNAME"
-            echo "      user: $NEON_USER"
-            echo "      pass: $NEON_PASSWORD"
-            echo "      schema: prod_schema"
+            echo "      dbname: ecommerce"
+            echo "      user: dbt_user"
+            echo "      pass: dbt_password"
+            echo "      schema: ci_schema"
             echo "      threads: 4"
-            echo "      sslmode: require"
-            echo "  target: prod"
+            echo "  target: ci"
           } > ~/.dbt/profiles.yml
 
-      # DEBUG: Show exactly what's in profiles.yml (password masked)
-      - name: Debug - Show profiles.yml content
-        run: |
-          echo "=== profiles.yml content ==="
-          cat ~/.dbt/profiles.yml | sed "s/$NEON_PASSWORD/[MASKED]/g"
-          echo ""
-          echo "Password length: ${#NEON_PASSWORD} chars"
-          echo "Host being used: $NEON_HOST"
-
-      # DEBUG: Test connection using psql (bypasses psycopg2 entirely)
-      - name: Debug - Test Neon connection with psql
-        run: |
-          sudo apt-get install -y postgresql-client -q
-          PGPASSWORD="$NEON_PASSWORD" psql \
-            "host=$NEON_HOST port=5432 dbname=$NEON_DBNAME user=$NEON_USER sslmode=require" \
-            -c "SELECT 1 as connection_test;"
+      - name: Run dbt seed
+        run: dbt seed --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target ci
 
       - name: Run dbt models
-        run: dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
+        run: dbt run --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target ci
 
       - name: dbt compile check
-        run: dbt compile --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target prod
+        run: dbt compile --project-dir dbt_project/dbt_ecomm --profiles-dir ~/.dbt --target ci
+
